@@ -106,7 +106,8 @@ export function createApp({ pool, apiKey } = {}) {
   app.patch('/jobs/:id', async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { status, in_hands_date } = req.body || {};
+      const body = req.body || {};
+      const { status, in_hands_date } = body;
       const sets = [];
       const values = [];
       let i = 1;
@@ -114,9 +115,11 @@ export function createApp({ pool, apiKey } = {}) {
         sets.push(`status=$${i++}`);
         values.push(status);
       }
-      if (in_hands_date) {
+      if (Object.prototype.hasOwnProperty.call(body, 'in_hands_date')) {
         sets.push(`in_hands_date=$${i++}`);
-        values.push(in_hands_date);
+        const normalizedInHandsDate =
+          in_hands_date === null || in_hands_date === '' ? null : in_hands_date;
+        values.push(normalizedInHandsDate);
       }
       if (!sets.length) {
         return res.status(400).json({ error: 'no changes' });
