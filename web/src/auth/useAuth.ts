@@ -15,6 +15,9 @@ import supabase, { isSupabaseConfigured } from '../supabaseClient'
 type AuthStatus = 'checking' | 'authed' | 'anon'
 
 type SignInWithEmailResult = Awaited<ReturnType<typeof supabase.auth.signInWithOtp>>
+type SignInWithPasswordResult = Awaited<
+  ReturnType<typeof supabase.auth.signInWithPassword>
+>
 
 type AuthContextValue = {
   session: Session | null
@@ -26,6 +29,10 @@ type AuthContextValue = {
     email: string,
     redirectTo?: string,
   ) => Promise<SignInWithEmailResult>
+  signInWithPassword: (
+    email: string,
+    password: string,
+  ) => Promise<SignInWithPasswordResult>
   signOut: () => Promise<void>
   refresh: () => Promise<void>
 }
@@ -222,6 +229,32 @@ function useProvideAuth(): AuthContextValue {
     [],
   )
 
+  const signInWithPassword = useCallback(
+    async (email: string, password: string) => {
+      if (!isSupabaseConfigured) {
+        setError(CONFIG_ERROR)
+        throw new Error(CONFIG_ERROR)
+      }
+
+      const trimmed = email.trim().toLowerCase()
+      const result = await supabase.auth.signInWithPassword({
+        email: trimmed,
+        password,
+      })
+
+      if (result.error) {
+        const friendly = describeError(result.error)
+        console.error('Password sign-in failed:', result.error)
+        setError(friendly)
+      } else {
+        setError(null)
+      }
+
+      return result
+    },
+    [],
+  )
+
   const signOut = useCallback(async () => {
     if (!isSupabaseConfigured) {
       setSession(null)
@@ -250,10 +283,19 @@ function useProvideAuth(): AuthContextValue {
       error,
       isConfigured: isSupabaseConfigured,
       signInWithEmail,
+      signInWithPassword,
       signOut,
       refresh: loadSession,
     }),
-    [error, loadSession, session, signInWithEmail, signOut, status],
+    [
+      error,
+      loadSession,
+      session,
+      signInWithEmail,
+      signInWithPassword,
+      signOut,
+      status,
+    ],
   )
 
   return value
