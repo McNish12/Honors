@@ -79,6 +79,44 @@ function normalizeJob(job, index = 0) {
   };
 }
 
+function toDateKey(value) {
+  if (!value) return '';
+
+  let date = value instanceof Date ? value : null;
+
+  if (!date && typeof value === 'string') {
+    const [datePortion] = value.split('T');
+    const match = datePortion.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+      const [, year, month, day] = match;
+      date = new Date(Number(year), Number(month) - 1, Number(day));
+    }
+  }
+
+  if (!date) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      date = parsed;
+    }
+  }
+
+  if (!date || Number.isNaN(date.getTime())) return '';
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatDisplayDate(value) {
+  const dateKey = toDateKey(value);
+  if (!dateKey) return '';
+
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const localDate = new Date(year, month - 1, day);
+  return localDate.toLocaleDateString();
+}
+
 function getDaysForMonth(activeDate) {
   const start = new Date(activeDate.getFullYear(), activeDate.getMonth(), 1);
   const end = new Date(activeDate.getFullYear(), activeDate.getMonth() + 1, 0);
@@ -90,9 +128,11 @@ function getDaysForMonth(activeDate) {
     const date = new Date(start);
     date.setDate(i - startOffset + 1);
     const inMonth = i >= startOffset && i < startOffset + totalDays;
+    const dateKey = toDateKey(date);
     cells.push({
-      key: `${date.toISOString()}-${i}`,
+      key: `${dateKey}-${i}`,
       date,
+      dateKey,
       inMonth,
       day: date.getDate(),
     });
@@ -170,7 +210,8 @@ function App() {
   const jobsByDate = useMemo(() => {
     return filteredJobs.reduce((acc, job) => {
       if (!job.in_hands_date) return acc;
-      const dateKey = job.in_hands_date;
+      const dateKey = toDateKey(job.in_hands_date);
+      if (!dateKey) return acc;
       if (!acc[dateKey]) acc[dateKey] = [];
       acc[dateKey].push(job);
       return acc;
@@ -272,33 +313,36 @@ function App() {
     }
   };
 
-  const renderJobCard = (job) => (
-    <div
-      key={job.id}
-      className={`job-card${job.id === selectedJobId ? ' selected' : ''}`}
-      draggable
-      onDragStart={() => handleDragStart(job)}
-      onClick={() => setSelectedJobId(job.id)}
-    >
-      <div className="job-card-header">
-        <span className="job-no">J:{job.job_no}</span>
-        <span className={`priority priority-${(job.priority || 'normal').toLowerCase()}`}>
-          {job.priority || 'Normal'}
-        </span>
-      </div>
-      <div className="job-title">{job.title}</div>
-      <div className="job-meta">
-        <span>{job.owner || 'Unassigned'}</span>
-        {job.in_hands_date && (
-          <span>
-            <CalendarDays size={14} />
-            {new Date(job.in_hands_date).toLocaleDateString()}
+  const renderJobCard = (job) => {
+    const inHandsDisplay = formatDisplayDate(job.in_hands_date);
+    return (
+      <div
+        key={job.id}
+        className={`job-card${job.id === selectedJobId ? ' selected' : ''}`}
+        draggable
+        onDragStart={() => handleDragStart(job)}
+        onClick={() => setSelectedJobId(job.id)}
+      >
+        <div className="job-card-header">
+          <span className="job-no">J:{job.job_no}</span>
+          <span className={`priority priority-${(job.priority || 'normal').toLowerCase()}`}>
+            {job.priority || 'Normal'}
           </span>
-        )}
+        </div>
+        <div className="job-title">{job.title}</div>
+        <div className="job-meta">
+          <span>{job.owner || 'Unassigned'}</span>
+          {inHandsDisplay && (
+            <span>
+              <CalendarDays size={14} />
+              {inHandsDisplay}
+            </span>
+          )}
+        </div>
+        {job.snippet && <p className="job-snippet">{job.snippet}</p>}
       </div>
-      {job.snippet && <p className="job-snippet">{job.snippet}</p>}
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="app-shell">
@@ -352,8 +396,7 @@ function App() {
               </div>
             ))}
             {calendarCells.map((cell) => {
-              const dateKey = cell.date.toISOString().slice(0, 10);
-              const entries = jobsByDate[dateKey] || [];
+              const entries = jobsByDate[cell.dateKey] || [];
               return (
                 <div
                   key={cell.key}
@@ -421,11 +464,7 @@ function App() {
               </div>
               <div className="detail-row">
                 <span className="label">In-hands</span>
-                <span>
-                  {selectedJob.in_hands_date
-                    ? new Date(selectedJob.in_hands_date).toLocaleDateString()
-                    : 'TBD'}
-                </span>
+                <span>{formatDisplayDate(selectedJob.in_hands_date) || 'TBD'}</span>
               </div>
               {selectedJob.est_so_no && (
                 <div className="detail-row">
