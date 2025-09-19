@@ -87,7 +87,11 @@ export function createApp({ pool, apiKey } = {}) {
         `INSERT INTO jobs (job_no, title, status)
          VALUES ($1, $2, $3)
          ON CONFLICT (job_no)
-         DO UPDATE SET title = jobs.title
+         DO UPDATE SET title = CASE
+           WHEN jobs.title IS NULL OR jobs.title = '' OR jobs.title = 'Untitled'
+           THEN EXCLUDED.title
+           ELSE jobs.title
+         END
          RETURNING id`,
         [job_no, jobTitle, 'intake'],
       );

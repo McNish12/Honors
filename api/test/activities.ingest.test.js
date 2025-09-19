@@ -58,3 +58,50 @@ test('concurrent ingest requests reuse the same job row', async (t) => {
     payloads.map((payload) => payload.snippet),
   );
 });
+
+test('ingest updates placeholder job titles', async (t) => {
+  const { app, pool } = createTestApp();
+  t.after(async () => {
+    await pool.end();
+  });
+
+  const agent = request(app);
+  const placeholderJobNo = 'J67890';
+
+  const firstResponse = await agent
+    .post('/activities/ingest')
+    .set('x-api-key', 'test-key')
+    .send({ job_no: placeholderJobNo, subject: null, snippet: 'Initial email' });
+
+  assert.equal(firstResponse.status, 200);
+
+  let job = await pool.query('SELECT title FROM jobs WHERE job_no = $1', [placeholderJobNo]);
+  assert.equal(job.rows[0].title, 'Untitled');
+
+  const updateResponse = await agent
+    .post('/activities/ingest')
+    .set('x-api-key', 'test-key')
+    .send({
+      job_no: placeholderJobNo,
+      subject: 'Kickoff Meeting [J:67890]',
+      snippet: 'Follow-up details',
+    });
+
+  assert.equal(updateResponse.status, 200);
+
+  job = await pool.query('SELECT title FROM jobs WHERE job_no = $1', [placeholderJobNo]);
+  assert.equal(job.rows[0].title, 'Kickoff Meeting');
+
+  const blankJobNo = 'J54321';
+  await pool.query("INSERT INTO jobs (job_no, title, status) VALUES ($1, '', 'intake')", [blankJobNo]);
+
+  const blankUpdate = await agent
+    .post('/activities/ingest')
+    .set('x-api-key', 'test-key')
+    .send({ job_no: blankJobNo, subject: 'Updated Title [J:54321]' });
+
+  assert.equal(blankUpdate.status, 200);
+
+  const blankJob = await pool.query('SELECT title FROM jobs WHERE job_no = $1', [blankJobNo]);
+  assert.equal(blankJob.rows[0].title, 'Updated Title');
+});
