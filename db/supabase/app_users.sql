@@ -1,7 +1,13 @@
 -- Supabase SQL for Honors Ops Auth & Roles
 -- Run this script in the Supabase SQL editor after creating your project.
 
-create type if not exists public.user_role as enum ('admin', 'staff', 'viewer');
+do $$
+begin
+  create type public.user_role as enum ('admin', 'staff', 'viewer');
+exception
+  when duplicate_object then null;
+end;
+$$;
 
 -- 2. Create the app_users table keyed by the auth user id.
 create table if not exists public.app_users (
