@@ -7,10 +7,14 @@ create type if not exists public.user_role as enum ('admin', 'staff', 'viewer');
 create table if not exists public.app_users (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null unique,
+  display_name text,
   role public.user_role not null default 'staff',
   created_at timestamp with time zone not null default timezone('utc', now()),
   updated_at timestamp with time zone not null default timezone('utc', now())
 );
+
+alter table public.app_users
+  add column if not exists display_name text;
 
 -- 3. Automatically maintain updated_at on every change.
 create or replace function public.set_updated_at()
