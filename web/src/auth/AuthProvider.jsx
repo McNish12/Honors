@@ -30,9 +30,31 @@ function formatErrorMessage(error) {
 
 const CONFIG_ERROR_MESSAGE =
   'Supabase environment variables are missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
-const APP_USERS_SETUP_ERROR_CODES = new Set(['42P01', '42501', '23505'])
+const APP_USERS_SETUP_ERROR_CODES = new Set(['42P01', '42501', '23505', 'PGRST301'])
 const APP_USERS_SETUP_MESSAGE =
   'Run db/supabase/app_users.sql in Supabase to configure the app_users table and permissions.'
+
+function isAppUsersSetupError(error) {
+  const code = error?.code
+  if (typeof code === 'string' && APP_USERS_SETUP_ERROR_CODES.has(code)) {
+    return true
+  }
+
+  const message = typeof error?.message === 'string' ? error.message.toLowerCase() : ''
+  if (!message) {
+    return false
+  }
+
+  if (!message.includes('app_users')) {
+    return false
+  }
+
+  return (
+    message.includes('schema cache') ||
+    message.includes('permission denied') ||
+    message.includes('does not exist')
+  )
+}
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
@@ -99,13 +121,12 @@ export function AuthProvider({ children }) {
         }
         return inserted
       } catch (err) {
-        const code = err?.code
-        const isAppUsersSetupError = typeof code === 'string' && APP_USERS_SETUP_ERROR_CODES.has(code)
-        const friendly = isAppUsersSetupError ? APP_USERS_SETUP_MESSAGE : formatErrorMessage(err)
+        const appUsersSetupError = isAppUsersSetupError(err)
+        const friendly = appUsersSetupError ? APP_USERS_SETUP_MESSAGE : formatErrorMessage(err)
         logAuthEvent('profile error', err)
         if (isMountedRef.current) {
           setProfile(null)
-          if (isAppUsersSetupError) {
+          if (appUsersSetupError) {
             setProfileLoading(false)
           }
           setError(friendly)
