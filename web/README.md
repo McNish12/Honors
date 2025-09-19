@@ -1,12 +1,43 @@
-# React + Vite
+# Honors Web App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This Vite + React project powers the Honors Ops dashboard. It now supports Supabase authentication with role-based access control.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```sh
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
+The dev server expects the environment variables from `.env` (see below). The router automatically respects `import.meta.env.BASE_URL`, so when hosting at `/Honors/` make sure `VITE_APP_BASE=/Honors/` is defined.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Environment Variables
+
+Copy `.env.example` to `.env` and supply the following:
+
+- `VITE_SUPABASE_URL` – Supabase project URL.
+- `VITE_SUPABASE_ANON_KEY` – public anon key for client-side access.
+- `VITE_APP_BASE` – optional base path override (set to `/Honors/` for GitHub Pages).
+- `VITE_API_BASE`, `VITE_API_KEY` – optional API integration settings preserved from the mock data workflow.
+
+## Authentication Setup
+
+1. Create a Supabase project and enable Email authentication.
+2. Run [`../db/supabase/app_users.sql`](../db/supabase/app_users.sql) in the Supabase SQL editor to create the `app_users` table, enum, and RLS policies.
+3. After inviting your first user, mark them as an admin:
+
+   ```sql
+   update public.app_users
+   set role = 'admin'
+   where email = 'admin@example.com';
+   ```
+
+When a new authenticated user signs in, the app will automatically create a default `staff` profile record if one does not already exist.
+
+## Build & Deploy
+
+```sh
+npm run build
+```
+
+The static output under `dist/` can be published to GitHub Pages. Ensure the Supabase environment variables are configured in the Pages workflow before deploying.
