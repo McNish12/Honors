@@ -41,3 +41,5 @@ npm run build
 ```
 
 The static output under `dist/` can be published to GitHub Pages. Ensure the Supabase environment variables are configured in the Pages workflow before deploying.
+
+GitHub Pages needs a fallback page so route refreshes keep working on `https://mcnish12.github.io/Honors/`. The repo includes `public/404.html`, which implements the [spa-github-pages](https://github.com/rafrex/spa-github-pages) redirect with `pathSegmentsToKeep = 1`. Vite copies this file to `dist/404.html` during `npm run build`, so deploy both `index.html` and `404.html` together.
