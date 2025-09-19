@@ -21,15 +21,6 @@ export default function AuthGuard({ children, requiredRole }) {
   const error = useAuthError()
   const { refreshSession } = useAuthActions()
 
-  if (loading) {
-    return (
-      <div className="auth-guard__loading" role="status" aria-live="polite">
-        <div className="spinner" />
-        <p>Checking your session…</p>
-      </div>
-    )
-  }
-
   if (error) {
     return (
       <div className="auth-guard__error">
@@ -42,6 +33,15 @@ export default function AuthGuard({ children, requiredRole }) {
         >
           Retry
         </button>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="auth-guard__loading" role="status" aria-live="polite">
+        <div className="spinner" />
+        <p>Checking your session…</p>
       </div>
     )
   }

@@ -28,7 +28,11 @@ function formatErrorMessage(error) {
   return message
 }
 
-const CONFIG_ERROR_MESSAGE = 'Supabase environment variables are missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
+const CONFIG_ERROR_MESSAGE =
+  'Supabase environment variables are missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
+const APP_USERS_SETUP_ERROR_CODES = new Set(['42P01', '42501', '23505'])
+const APP_USERS_SETUP_MESSAGE =
+  'Run db/supabase/app_users.sql in Supabase to configure the app_users table and permissions.'
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
@@ -95,10 +99,15 @@ export function AuthProvider({ children }) {
         }
         return inserted
       } catch (err) {
-        const friendly = formatErrorMessage(err)
+        const code = err?.code
+        const isAppUsersSetupError = typeof code === 'string' && APP_USERS_SETUP_ERROR_CODES.has(code)
+        const friendly = isAppUsersSetupError ? APP_USERS_SETUP_MESSAGE : formatErrorMessage(err)
         logAuthEvent('profile error', err)
         if (isMountedRef.current) {
           setProfile(null)
+          if (isAppUsersSetupError) {
+            setProfileLoading(false)
+          }
           setError(friendly)
         }
         return null
