@@ -119,6 +119,12 @@ body {
   padding: 0.75rem 1rem;
 }
 
+.login-page__mode-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -143,6 +149,23 @@ body {
 .button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.button--subtle {
+  background: #f8f9fc;
+  color: #475467;
+  border-color: #e4e7ec;
+}
+
+.button--subtle:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.button--subtle.is-active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
 }
 
 .button--ghost {
