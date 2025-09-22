@@ -65,6 +65,14 @@ The script in `scripts/apps_script/bridge.gs` can be pasted into Apps Script. Se
    npm run build
    ```
 
+## Navigation
+
+- `/` – Dashboard (protected).
+- `/jobs` – Jobs (protected; coming soon).
+- `/onboarding` – Onboarding (protected; shown when a profile is incomplete).
+
+Both `/jobs` and `/onboarding` reuse the Supabase-authenticated guard so they are only accessible after signing in.
+
 ### Deployment
 
 GitHub Actions (`.github/workflows/pages.yml`) builds the React app and publishes the static bundle to the `gh-pages` branch whenever `main` is updated.
