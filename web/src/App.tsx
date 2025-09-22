@@ -1,8 +1,10 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AuthGuard from './auth/AuthGuard'
 import { AuthProvider } from './auth/useAuth'
-import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Jobs from './pages/Jobs'
+import Login from './pages/Login'
+import Onboarding from './pages/Onboarding'
 import { isSupabaseConfigured } from './supabaseClient'
 import './App.css'
 
@@ -22,6 +24,22 @@ function AppRoutes() {
           element={(
             <AuthGuard>
               <Dashboard />
+            </AuthGuard>
+          )}
+        />
+        <Route
+          path="/jobs"
+          element={(
+            <AuthGuard>
+              <Jobs />
+            </AuthGuard>
+          )}
+        />
+        <Route
+          path="/onboarding"
+          element={(
+            <AuthGuard>
+              <Onboarding />
             </AuthGuard>
           )}
         />

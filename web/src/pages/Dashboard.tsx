@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getOrCreateAppUser, UnauthorizedError } from '../api/users'
 import { useAuth } from '../auth/useAuth'
 import type { AppUser } from '../types'
@@ -29,6 +29,11 @@ export default function Dashboard() {
       const profile = await getOrCreateAppUser()
       if (!isMountedRef.current) return
       setAppUser(profile)
+
+      const hasDisplayName = typeof profile.display_name === 'string' && profile.display_name.trim().length > 0
+      if (!hasDisplayName) {
+        navigate('/onboarding')
+      }
     } catch (err) {
       if (!isMountedRef.current) return
 
@@ -90,24 +95,31 @@ export default function Dashboard() {
           </p>
         )}
         {!loading && !error && appUser && (
-          <dl className="profile">
+          <>
+            <dl className="profile">
+              <div>
+                <dt>Email</dt>
+                <dd>{appUser.email}</dd>
+              </div>
+              <div>
+                <dt>Display name</dt>
+                <dd>{appUser.display_name || <span className="muted">Not set</span>}</dd>
+              </div>
+              <div>
+                <dt>Account created</dt>
+                <dd>{createdAt}</dd>
+              </div>
+              <div>
+                <dt>Auth user ID</dt>
+                <dd className="monospace">{appUser.id}</dd>
+              </div>
+            </dl>
             <div>
-              <dt>Email</dt>
-              <dd>{appUser.email}</dd>
+              <Link to="/jobs" className="link">
+                Go to Jobs →
+              </Link>
             </div>
-            <div>
-              <dt>Display name</dt>
-              <dd>{appUser.display_name || <span className="muted">Not set</span>}</dd>
-            </div>
-            <div>
-              <dt>Account created</dt>
-              <dd>{createdAt}</dd>
-            </div>
-            <div>
-              <dt>Auth user ID</dt>
-              <dd className="monospace">{appUser.id}</dd>
-            </div>
-          </dl>
+          </>
         )}
       </section>
     </div>
